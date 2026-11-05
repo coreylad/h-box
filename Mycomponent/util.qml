@@ -23,13 +23,13 @@ Rectangle{
     GridLayout{
       anchors.centerIn: parent
       columns: 3
-      Label{text:"标题"}
+      Label{text:"Title"}
       TextField{
           Layout.columnSpan: 2
           id:nbt
           onTextChanged:{dict.title=nbt.text}
       }
-      Label{text:"封面"}
+      Label{text:"Cover"}
       TextField{
           id:nf
           onTextChanged:{dict.feng=nf.text}
@@ -39,7 +39,7 @@ Rectangle{
           sourceSize.height: 17
           source:"../icon/qes.svg"
       }
-      Label{text:"视频路径"}
+      Label{text:"Video path"}
       TextField{
           id:nv
           onTextChanged:{dict.vp=nv.text}
@@ -48,7 +48,7 @@ Rectangle{
           sourceSize.width: 17
           sourceSize.height: 17
           source:"../icon/qes.svg"}
-      Label{text:"下载目录"}
+      Label{text:"Download directory"}
       TextField{
           id:mu
           onTextChanged:{dict.path=mu.text}
@@ -57,7 +57,7 @@ Rectangle{
           sourceSize.width: 17
           sourceSize.height: 17
           source:"../icon/qes.svg"}
-      Label{text:"网络代理"}
+      Label{text:"Network proxy"}
       TextField{
           id:proiexs
           onTextChanged:{dict.proxy=proiexs.text}
@@ -67,14 +67,14 @@ Rectangle{
           sourceSize.height: 17
           source:"../icon/qes.svg"}
       Button{
-        text:"下载"
+        text:"Download"
         onClicked: {
            bridge.spider(dict)
            timer.start()
         }
       }
       Button{
-        text:"清除"
+        text:"Clear"
         onClicked: {
             nbt.text = ""
             nf.text = ""

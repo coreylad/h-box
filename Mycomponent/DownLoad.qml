@@ -23,33 +23,33 @@ Rectangle{
         anchors.centerIn: parent
         columns: 2
         visible:false
-        Label{text:"文件标题"}
+        Label{text:"File title"}
         TextField{id:titleedit}
         Label{
             id:prefeng
-            text:"封面"
+            text:"Cover"
         }
         IconButton{
            icon{source:"../icon/qes.svg"}
         }
-        Label{text:"视频路径"}
+        Label{text:"Video path"}
         Text{
             width:50
             id:videourl
             wrapMode: Text.Wrap
         }
         Button{
-            text:"确认"
+            text:"Confirm"
             onClicked: {
                 bridge.localimport(titleedit.text,prefeng.text,videourl.text)
                 drop.visible = true
                 detail.visible = false
-                msgtip.msg="导入成功"
+                msgtip.msg="Import successful"
                 msgtip.open()
             }
         }
         Button{
-            text:"取消"
+            text:"Cancel"
             onClicked: {
                 drop.visible = true
                 detail.visible = false

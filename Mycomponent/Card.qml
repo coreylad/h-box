@@ -20,7 +20,7 @@ Rectangle {
         if(edit){
           love.source="../icon/Edit.svg"
         }else{
-          love.source="../icon/播放.svg"
+          love.source="../icon/play2.svg"
 
         }
     }
@@ -50,7 +50,7 @@ Rectangle {
               id:love
               visible: false
               anchors.centerIn: parent
-              source:"../icon/播放.svg"
+              source:"../icon/play2.svg"
               width:50
               height: 50
             }

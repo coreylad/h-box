@@ -9,7 +9,7 @@ TextField {
 
     signal doubleClicked(var/*MouseEvent*/ event)
 
-    placeholderText: qsTr("请输入内容")
+    placeholderText: qsTr("Please enter text")
     font.family: "Arial"
     font.pixelSize: 15
     font.weight: Font.Thin

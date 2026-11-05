@@ -51,7 +51,7 @@ Rectangle{
                 id: ico
                 width: 25
                 height: 25
-                source: "../icon/网站.svg"
+                source: "../icon/website.svg"
                 layer.enabled: true
                 layer.effect: OpacityMask {
                       maskSource: Rectangle {
@@ -70,7 +70,7 @@ Rectangle{
         }
             Label{
                id:title
-               text:"标题获取中。。。"
+               text:"Fetching title..."
                anchors.verticalCenter: parent.verticalCenter
                anchors.verticalCenterOffset: -20
                font.pointSize: 12
@@ -99,7 +99,7 @@ Rectangle{
                 id: image2
                 width: 20
                 height: 20
-                source: "../icon/时间.svg"
+                source: "../icon/time.svg"
                 fillMode: Image.PreserveAspectFit
             }
 
@@ -203,8 +203,8 @@ Rectangle{
                 trash.visible=true
             }
             if(typeof(show.error)!="undefined"){
-                error.text = "chrome驱动与你当前chrome版本不匹配，请下载匹配版本chrome驱动\n"+show.error+
-                        "\n下载地址 http://chromedriver.storage.googleapis.com/index.html"
+                error.text = "The chromedriver does not match your installed Chrome version; please install a matching chromedriver\n"+show.error+
+                        "\nDownload from http://chromedriver.storage.googleapis.com/index.html"
                 error.open()
             }
     }

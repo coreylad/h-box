@@ -1,0 +1,10 @@
+services:
+  hbox:
+    build: .
+    ports:
+      - "6080:6080"
+    volumes:
+      - hbox-data:/data
+    shm_size: "1gb"
+volumes:
+  hbox-data:

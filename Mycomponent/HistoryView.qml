@@ -9,7 +9,7 @@ Rectangle {
             if(times <= 0){
                 return '00:00:00';
             }else{
-                let hh = parseInt(times / 3600); //小时
+                let hh = parseInt(times / 3600); //hours
                 let shh = times - hh * 3600;
                 let ii = parseInt(shh/ 60);
                 let ss = parseInt(shh - ii * 60);
@@ -82,14 +82,14 @@ Rectangle {
                 Button{
                    flat: true
                    icon{
-                      source:"../icon/时间.svg"
+                      source:"../icon/time.svg"
                    }
                    text:setHis(viewtime/1000)
                 }
                 Button{
                    flat: true
                    icon{
-                      source:"../icon/时间1.svg"
+                      source:"../icon/time1.svg"
                    }
                    text:time
                 }

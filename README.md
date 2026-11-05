@@ -93,3 +93,71 @@ h-box是一个将视频从porn网站下载到本地,并可以收藏播放管理�
 - 支持15+ 站点解析
 - 新的使用规则解析站点方式
 - BUG fix
+
+## Run with Docker
+
+The GUI runs inside the container (Xvfb + x11vnc) and is served in your browser through noVNC.
+
+```bash
+docker build -t hbox .
+docker run -d --name hbox --shm-size=1g -p 6080:6080 -v hbox-data:/data hbox
+```
+
+Open <http://localhost:6080/vnc.html?autoconnect=1&resize=scale>.
+
+Or with Docker Compose: `docker compose up -d --build`.
+
+### Hosting on a server
+- Open/forward TCP port `6080`. The noVNC session has **no password**, so don't expose it publicly: bind to localhost (`-p 127.0.0.1:6080:6080`) and use an SSH tunnel (`ssh -L 6080:localhost:6080 user@server`) or put it behind a reverse proxy with authentication and HTTPS (WebSocket support required).
+- Data (database, downloaded videos, Chrome profile, images) is stored in the `/data` volume. Use `-v /host/path:/data` for a bind mount.
+- Manage: `docker logs -f hbox`, `docker restart hbox`, `docker stop hbox`.
+- Upgrade: `git pull && docker build -t hbox . && docker rm -f hbox`, then run the `docker run` command again; data persists in the volume.
+- Optional env vars: `HBOX_DATA_DIR` (default `/data/datadir`), `FFMPEG_BIN`, `CHROMEDRIVER_BIN`. Set `-e HTTP_PROXY=... -e HTTPS_PROXY=...` if downloads need a proxy.
+- The Windows "sync Chrome data" button is a no-op in Docker.
+
+## Install from the repository
+
+### Option A: Docker (recommended)
+Prerequisites: Git and Docker Engine 20.10+ (Docker Desktop on Windows/macOS).
+
+1. Clone the repo:
+   ```bash
+   git clone https://github.com/coreylad/h-box.git
+   cd h-box
+   ```
+2. Build the image (first build downloads Chromium, ffmpeg and Qt libraries, ~5-10 minutes):
+   ```bash
+   docker build -t hbox .
+   ```
+3. Start it:
+   ```bash
+   docker run -d --name hbox --shm-size=1g -p 6080:6080 -v hbox-data:/data hbox
+   ```
+4. Open <http://localhost:6080/vnc.html?autoconnect=1&resize=scale> in a browser.
+5. Verify: `docker logs hbox` should print "H-BOX is running". Stop/start with `docker stop hbox` / `docker start hbox`.
+
+### Option B: Native install (Linux/macOS/Windows)
+Prerequisites: Git, Python 3.11 (3.12 may work but is untested), Google Chrome or Chromium plus a **matching** chromedriver, and ffmpeg.
+
+1. Clone the repo (as above).
+2. Install system tools:
+   - Debian/Ubuntu: `sudo apt install ffmpeg chromium chromium-driver`
+   - macOS: `brew install ffmpeg chromedriver` (and install Chrome)
+   - Windows: the repo ships `ffmpeg.exe` and `chromedriver.exe`; replace `chromedriver.exe` if it doesn't match your Chrome version
+     (<https://googlechromelabs.github.io/chrome-for-testing/>).
+3. Create a virtual environment and install dependencies:
+   ```bash
+   python3.11 -m venv .venv
+   source .venv/bin/activate        # Windows: .venv\Scripts\activate
+   pip install -r requirements.txt
+   ```
+4. Run from the repository root (the app uses relative paths):
+   ```bash
+   python main.py
+   ```
+5. On first start the data directory defaults to `./datadir`. Override with `HBOX_DATA_DIR=/path/to/data`, and set `FFMPEG_BIN` / `CHROMEDRIVER_BIN` if the tools are not on your `PATH`.
+
+### Troubleshooting
+- `chromedriver` version mismatch: install a driver matching your Chrome/Chromium major version.
+- Blank/erroring Qt window on Linux: install `libxcb-cursor0` and `libxkbcommon-x11-0`, or use Docker.
+- Downloads require network access to the target site; set `HTTP_PROXY`/`HTTPS_PROXY` if a proxy is needed.

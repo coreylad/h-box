@@ -4,7 +4,7 @@ Window{
     property string path
     width: 1200
     height: 800
-    title:"预览"
+    title:"Preview"
    Image{
        anchors.fill: parent
        cache:false

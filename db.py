@@ -6,7 +6,7 @@ import shutil
 import time
 import pysrt
 import httpx
-from util import gethttpxporoxy
+from util import gethttpxporoxy, url_to_path
 from Global import Global
 
 def dict_factory(cursor, row):
@@ -286,7 +286,7 @@ def updatehistory(id,num):
 def addtags(title,desc,img):
     if not os.path.exists("./img"):
         os.mkdir("./img")
-    src = img.lstrip("file:///")
+    src = url_to_path(img)
     n = int(time.time())
     shutil.copy(src, f"./img/tag{n}.jpg")
     sql = f"insert into tags(name,ids,num,desc,bg) values('{title}','',0,'{desc}','img/tag{n}.jpg')"
@@ -294,9 +294,9 @@ def addtags(title,desc,img):
     cur.execute(sql)
     CONN.commit()
 
-def ctags(id,title,desc,img):   # 更新标签
+def ctags(id,title,desc,img):   # update tag
     if img.startswith("file"):
-        src = img.lstrip("file:///")
+        src = url_to_path(img)
         shutil.copy(src,f"./img/tag{id}.jpg")
         sql = f"update tags set name='{title}',desc='{desc}',bg='img/tag{id}.jpg' where id={id}"
     else:
@@ -375,7 +375,7 @@ def changetags(s,id,nums):
     cur.execute(sql)
     CONN.commit()
 
-def insertvideo(title,feng,video,ico):
+def insertvideo(title,feng,video,ico=""):
     sql = f"insert into hentai_movies(title,feng,video,yulan,company) values('{title}','{feng}','{video}','','{ico}')"
     cur = CONN.cursor()
     cur.execute(sql)
@@ -474,9 +474,10 @@ def datadir():
     cur = CONN.cursor()
     cur.execute(sql)
     datadir = cur.fetchone()
-    if not datadir["datadir"]:
-        pwd = os.getcwd()
-        pwd = pwd.replace("\\","/")+"/datadir"
+    env_dir = os.environ.get("HBOX_DATA_DIR")
+    if env_dir or not datadir["datadir"]:
+        pwd = env_dir or os.getcwd().replace("\\","/")+"/datadir"
+        os.makedirs(pwd, exist_ok=True)
         sql = f"update config set datadir='{pwd}'"
         cur.execute(sql)
         CONN.commit()

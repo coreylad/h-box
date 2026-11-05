@@ -9,6 +9,7 @@ import toml
 from PySide6.QtCore import QObject, Slot, Signal, QThread
 from PySide6.QtWidgets import QApplication
 from Global import Global
+from util import FFMPEG, url_to_path, IS_WIN
 from PySide6.QtGui import QIcon
 from PySide6.QtQml import QQmlApplicationEngine, QmlElement
 import db
@@ -16,6 +17,7 @@ import time
 from dirsync import sync
 import logging
 import threading
+import shutil
 from PIL import Image
 QML_IMPORT_NAME = "io.qt.textproperties"
 QML_IMPORT_MAJOR_VERSION = 1
@@ -128,7 +130,12 @@ class Bridge(QObject):
 
     @Slot(str,str,str)
     def localimport(self,title,feng,video):
-       db.insertvideo(title,feng,video)
+        src = url_to_path(video)
+        subdir = f"local_{int(time.time()*1000)}"
+        os.makedirs(db.getdatadir() + "/" + subdir, exist_ok=True)
+        name = os.path.basename(src)
+        shutil.copyfile(src, f"{db.getdatadir()}/{subdir}/{name}")
+        db.insertvideo(title, "", f"{subdir}/{name}")
 
     @Slot(str,str,str,str)
     def netimport(self,title,feng,video,mu):
@@ -149,7 +156,7 @@ class Bridge(QObject):
     @Slot(int,str,str)
     def update(self,id,title,img):
         if "notfound" not in img:
-            img = img.lstrip('file:///')
+            img = url_to_path(img)
             newpath = db.cpimg(img,id)
         else:
             newpath = ""
@@ -164,7 +171,7 @@ class Bridge(QObject):
     def spider(self,url):
         Global.download['url'] = url
         Global.download['run'] = 1
-        Global.download['text'] = "页面解析中"
+        Global.download['text'] = "Parsing page"
         self.sig1.emit(Global.download)
         t = threading.Thread(target=parser,args=(url,self.sig1,self.sig2))
         t.setDaemon(True)
@@ -230,6 +237,10 @@ class ThreadTask(QObject):
 
 def syncdata(sig):
     Global.download['sync'] = True
+    if not IS_WIN:
+        Global.download['sync'] = False
+        sig.emit(1)
+        return
     home = str(pathlib.Path.home()) + r"\AppData\Local\Google\Chrome\User Data"
     pwd = os.getcwd()
     pwd = pwd.replace("\\", "/") + "/userdir"
@@ -243,8 +254,7 @@ def syncdata(sig):
 
 def download(title,feng,video,mu):
     path = db.getdatadir()+f"/{mu}/"
-    if not os.path.exists(path):
-        os.mkdir(path)
+    os.makedirs(path, exist_ok=True)
     s = 0
     for i in (feng,video):
         rep = httpx.get(i,verify=False,proxies=gethttpxporoxy())
@@ -259,7 +269,7 @@ def download(title,feng,video,mu):
 
 def gencpic(id,ts,vpath,num):
     text = strftime("%H:%M:%S", gmtime(ts / 1000))
-    cmd = f'ffmpeg.exe -ss "{text}" -i "{vpath}" img/img{id}.jpg -y'
+    cmd = f'{FFMPEG} -ss "{text}" -i "{vpath}" img/img{id}.jpg -y'
     # os.system(cmd)
     o = subprocess.Popen(cmd,stdout=subprocess.PIPE,shell=True,
                            stderr=subprocess.PIPE)
@@ -274,7 +284,7 @@ def genpreview(path,id,sig):
         workpath = path.split("/")
         path = basedirs + path
         workdir = basedirs + workpath[0]
-        out = subprocess.Popen('ffmpeg.exe -i "%s"' % path, stdout=subprocess.PIPE,shell=True,
+        out = subprocess.Popen('%s -i "%s"' % (FFMPEG, path), stdout=subprocess.PIPE,shell=True,
                                stderr=subprocess.PIPE)
         out.wait()
         strout, strerr = out.communicate()
@@ -288,7 +298,7 @@ def genpreview(path,id,sig):
                 dur = int(dd[1]) * 60 + int(dd[2].split(".")[0])
                 timedur = int(dur / 25)
                 break
-        s = r'ffmpeg.exe -i "%s" -vf fps=1/%s "%s/%s"' % (path, timedur, workdir, "images-%d.png")
+        s = r'%s -i "%s" -vf fps=1/%s "%s/%s"' % (FFMPEG, path, timedur, workdir, "images-%d.png")
         out = subprocess.Popen(s, stdout=subprocess.PIPE,shell=True,
                                stderr=subprocess.PIPE)
         out.communicate()
@@ -384,7 +394,6 @@ class Config(QObject):
 
     @Slot(result=int)
     def getheadless(self):
-        print("+++++++++++++++++++")
         return db.getheadless()
 
     @Slot(int)

@@ -14,7 +14,7 @@ from selenium.webdriver.support.wait import WebDriverWait
 import db
 import urllib.parse
 from Global import Global
-from util import loadm3u8, getporoxy, gethttpxporoxy,checkNameValid
+from util import FFMPEG, CHROMEDRIVER, loadm3u8, getporoxy, gethttpxporoxy,checkNameValid
 from selenium.webdriver.common.by import By
 from seleniumwire import webdriver
 import logging
@@ -45,12 +45,12 @@ def parser(url, sig, sig1):
             host = basehost
         rule = getrule(host)
         if not rule:
-            download['text'] = "缺少解析规则"
+            download['text'] = "Missing parsing rule"
             download['reset'] = 1
             sig.emit(download)
             shutil.rmtree(basedir)
             return
-        download['text'] = "页面解析中"
+        download['text'] = "Parsing page"
         download['type'] = rule.get('type')
         sig.emit(download)
         chrome_options = webdriver.ChromeOptions()
@@ -65,13 +65,14 @@ def parser(url, sig, sig1):
             chrome_options.add_argument(f'user-agent={user_agent}')
             chrome_options.add_argument("--window-size=1920x1080")
             chrome_options.add_argument('--disable-gpu')
+            chrome_options.add_argument('--disable-dev-shm-usage')
             chrome_options.add_argument('headless')
             chrome_options.add_argument('no-sandbox')
             chrome_options.add_argument("--start-maximized")
             chrome_options.page_load_strategy = 'none'
         else:
             chrome_options.add_experimental_option("detach", True)
-        drive =webdriver.Chrome('chromedriver.exe',seleniumwire_options=options, options=chrome_options)
+        drive =webdriver.Chrome(CHROMEDRIVER,seleniumwire_options=options, options=chrome_options)
         drive.scopes = rule['video']
         bakclicks = rule.get('click-bak')
         b = False
@@ -116,7 +117,7 @@ def parser(url, sig, sig1):
                 Img = drive.find_element(By.XPATH, rule['pic']['re']).get_attribute(rule['pic']['value'])
             except:
                 Img = None
-            download['text'] = "标题已获取"
+            download['text'] = "Title retrieved"
             sig.emit(download)
             while True:
                 loglist = drive.get_log("driver")
@@ -126,7 +127,7 @@ def parser(url, sig, sig1):
             Video = geturl(drive, rule['video'])
         threading.Thread(target=quitdrive,args=(drive,)).start()
         if not Video:
-            download['text'] = "失败,无法找到视频路径"
+            download['text'] = "Failed, video path not found"
             download['reset'] = 1
             sig.emit(download)
             return
@@ -134,7 +135,7 @@ def parser(url, sig, sig1):
         Title = Title.replace("\n", " - ")
         Title = Title.lstrip(" ")
         if Img:
-            download['text'] = "封面下载中"
+            download['text'] = "Downloading cover"
             sig.emit(download)
             imgname = Img.split("/")[-1]
             imgname = checkNameValid(imgname)
@@ -149,7 +150,7 @@ def parser(url, sig, sig1):
             imgpath = pwd.replace("\\", "/") + "/icon/notfound.png"
             imgname = 'notfound.png'
         download['title'] = Title
-        download['text'] = "解析成功"
+        download['text'] = "Parsed successfully"
         download['img'] = imgpath
         download['ico'] = rule['ico']
         sig.emit(download)
@@ -164,14 +165,14 @@ def parser(url, sig, sig1):
         db.insertvideo(title, dirname + "/" + imgname, dirname + "/" + video,icopath)
     except SessionNotCreatedException as e:
         print(e.msg.split('\n')[1])
-        download['text'] = "失败"
+        download['text'] = "Failed"
         download['error'] = e.msg.split('\n')[1]
         download['reset'] = 1
         sig.emit(download)
         shutil.rmtree(basedir)
     except Exception as e:
         logger.error(traceback.format_exc())
-        download['text'] = "失败"
+        download['text'] = "Failed"
         download['reset'] = 1
         sig.emit(download)
         shutil.rmtree(basedir)
@@ -185,7 +186,7 @@ def downloadmp4(url, sig, sig1, basedir):
         s = 0
         name = "download_" + str(int(time.time()))
         path = basedir + "/"
-        download['text'] = "下载中"
+        download['text'] = "Downloading"
         # download['load'] = 1
         sig.emit(download)
         # sig1.emit({"load": 1})
@@ -196,7 +197,7 @@ def downloadmp4(url, sig, sig1, basedir):
                     s += 1024 * 10
                     sig1.emit({"now": round(s / 1024 / 1024, 2), "total": videosize, "load": 0})
                     download['loading'] = {"now": round(s / 1024 / 1024, 2), "total": videosize}
-        download['text'] = "完成"
+        download['text'] = "Done"
         download['reset'] = 1
         sig.emit(download)
         return f"{name}.mp4"
@@ -217,7 +218,7 @@ def downloadm3u8(url, sig, sig1, basedir, b=False,m4s=False):
         if base_url.endswith("/") and m4shead.startswith("/"):
             base_url = base_url.rstrip("/")
         m4shead = base_url+m4shead
-    download['text'] = "下载中"
+    download['text'] = "Downloading"
     download['load'] = 1
     sig.emit(download)
     # sig1.emit({"load": 1})
@@ -233,18 +234,18 @@ def downloadm3u8(url, sig, sig1, basedir, b=False,m4s=False):
                 f.write(f"file 'tmp_{i + 1}.ts'\n")
                 m4sl.append(f'tmp_{i + 1}.ts')
     videoname = "mp4_" + str(int(time.time()))
-    path = os.path.abspath(sys.argv[0])
-    ffmpegpath = path.rstrip(path.split("\\")[-1]) + "/ffmpeg.exe"
-    download['text'] = "合成中"
+    ffmpegpath = FFMPEG
+    download['text'] = "Merging"
     sig.emit(download)
     if m4s:
         mergem4s(m4shead,m4sl,videoname,ffmpegpath,basedir)
     else:
-        p = subprocess.Popen(f'cd /d {basedir} && {ffmpegpath} -f concat -i file.txt -c copy {videoname}.mp4 && del *.ts',
-                             stdout=subprocess.PIPE, shell=True,
+        p = subprocess.Popen([ffmpegpath, '-f', 'concat', '-i', 'file.txt', '-c', 'copy', f'{videoname}.mp4'],
+                             stdout=subprocess.PIPE, cwd=basedir,
                              stderr=subprocess.PIPE)
         p.communicate()
-    download['text'] = "完成"
+        removefiles(basedir, '.ts')
+    download['text'] = "Done"
     download['reset'] = 1
     sig.emit(download)
     return f"{videoname}.mp4"
@@ -289,10 +290,18 @@ def mergem4s(mp4head,l,name,ffmpegpath,basedir):
             mp4data += (mp4+f.read())
     with open(f'{basedir}/'+"tmp.mp4",'wb') as f:
         f.write(mp4data)
-    p = subprocess.Popen(f'cd /d {basedir} && {ffmpegpath} -i tmp.mp4 -vcodec libx264 -acodec copy {name}.mp4 && del *.ts && del tmp.mp4',
-                         stdout=subprocess.PIPE, shell=True,
+    p = subprocess.Popen([ffmpegpath, '-i', 'tmp.mp4', '-vcodec', 'libx264', '-acodec', 'copy', f'{name}.mp4'],
+                         stdout=subprocess.PIPE, cwd=basedir,
                          stderr=subprocess.PIPE)
     p.communicate()
+    removefiles(basedir, '.ts')
+    removefiles(basedir, 'tmp.mp4')
+
+
+def removefiles(basedir, suffix):
+    for n in os.listdir(basedir):
+        if n.endswith(suffix):
+            os.remove(os.path.join(basedir, n))
 
 
 

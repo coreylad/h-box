@@ -32,7 +32,7 @@ Rectangle{
     function pop(index){
         data.remove(index)
     }
-    // 弹出层
+    // popup layer
     Popup{
       id:add
       anchors.centerIn: parent

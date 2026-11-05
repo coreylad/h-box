@@ -63,7 +63,7 @@ Window {
             if(times <= 0){
                 return '00:00:00';
             }else{
-                let hh = parseInt(times / 3600); //小时
+                let hh = parseInt(times / 3600); //hours
                 let shh = times - hh * 3600;
                 let ii = parseInt(shh/ 60);
                 let ss = parseInt(shh - ii * 60);
@@ -120,7 +120,7 @@ Window {
             AudioOutput{
                 id:voloutput
             }
-            Rectangle{   // 字幕
+            Rectangle{   // subtitles
               anchors.horizontalCenter: videoshow.horizontalCenter
               y:videoshow.height-height-10
               radius: 15

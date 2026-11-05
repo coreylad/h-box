@@ -44,7 +44,7 @@ Rectangle{
                obj.url=input.text
                bridge.starttask(obj,input.text)
            }else{
-               msgtip.msg="最大任务数为3"
+               msgtip.msg="Maximum number of tasks is 3"
                msgtip.open()
            }
 
@@ -115,7 +115,7 @@ Rectangle{
     }
     IconButton{
        id:sync
-       icon.source: "../icon/同步.svg"
+       icon.source: "../icon/sync.svg"
        anchors.horizontalCenter: input.horizontalCenter
        anchors.horizontalCenterOffset: input.width/2+85
        anchors.verticalCenter: input.verticalCenter
@@ -149,12 +149,12 @@ Rectangle{
          anchors.centerIn: parent
     MsgTip{
        id:syncchrome
-       msg:"数据后台同步中"
+       msg:"Syncing data in the background"
     }
 
 }
 
-//多任务栏
+//multi-task bar
 Rectangle{
    id:taskwindow
    height: parent.height

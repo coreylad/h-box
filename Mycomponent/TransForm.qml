@@ -153,7 +153,7 @@ Rectangle{
      Button{
          anchors.centerIn: roots
          anchors.verticalCenterOffset: 140
-         text:"确认"
+         text:"Confirm"
          onClicked: {
              let l = []
                print(rightdata)
@@ -169,7 +169,7 @@ Rectangle{
      Button{
          anchors.centerIn: roots
          anchors.verticalCenterOffset: 170
-         text:"取消"
+         text:"Cancel"
          onClicked: {
            roots.visible = false
          }

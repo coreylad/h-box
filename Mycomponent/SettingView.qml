@@ -10,7 +10,7 @@ Rectangle {
       ComboBox {
           Layout.columnSpan: 2
           id:combox
-          model: ["English","中文"]
+          model: ["English","Chinese (中文)"]
           currentIndex : 0
           onActivated:{
               if(index===0){

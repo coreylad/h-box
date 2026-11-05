@@ -1,4 +1,7 @@
+import os
 import re
+import sys
+from urllib.parse import unquote, urlparse
 from m3u8 import M3U8
 from urllib.request import getproxies
 import httpx
@@ -47,7 +50,7 @@ def checkhentai(url):
 
 def checkNameValid(name=None):
     """
-    检测Windows文件名称！
+    Check for invalid file name characters!
     """
     reg = re.compile(r'[\\/:*?"<>|\r\n]+')
     valid_name = reg.findall(name)
@@ -62,3 +65,18 @@ def checkNameValid(name=None):
 
 
 
+
+
+IS_WIN = os.name == "nt"
+FFMPEG = os.environ.get("FFMPEG_BIN", "ffmpeg.exe" if IS_WIN else "ffmpeg")
+CHROMEDRIVER = os.environ.get("CHROMEDRIVER_BIN", "chromedriver.exe" if IS_WIN else "chromedriver")
+
+
+def url_to_path(url):
+    """Convert a file:// URL (as produced by QML) to a local filesystem path."""
+    if not url.startswith("file:"):
+        return url
+    p = unquote(urlparse(url).path)
+    if re.match(r"^/[A-Za-z]:", p):
+        p = p[1:]
+    return p

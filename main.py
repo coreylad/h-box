@@ -162,10 +162,10 @@ class Bridge(QObject):
             newpath = ""
         db.updatedata(id,title,newpath)
 
-    @Slot(str,str)
+    @Slot(str, result=str)
     def stredit(self,s):
         l = s.split('/')[0]
-        return l.rstrip(".mp4")
+        return l.removesuffix(".mp4")
 
     @Slot(str)
     def spider(self,url):
@@ -265,7 +265,7 @@ def download(title,feng,video,mu):
         else:
             with open(path+f"{title}.mp4","wb") as f:
                 f.write(rep.content)
-    db.insertvideo(title, f"milker/{mu}/{title}.jpg", f"milker/{mu}/{title}.mp4")
+    db.insertvideo(title, f"{mu}/{title}.jpg", f"{mu}/{title}.mp4")
 
 def gencpic(id,ts,vpath,num):
     text = strftime("%H:%M:%S", gmtime(ts / 1000))

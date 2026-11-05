@@ -85,12 +85,11 @@ CONN.row_factory = dict_factory
 def getdata(text=None,page=1):
     if text:
         n = 25 * (page-1)
-        sql_total = "select count(*) as total from hentai_movies where title like '%%%s%%'" % text
-        sql = "select title,feng,video,id,collect,yulan,company from hentai_movies where title like '%%%s%%' limit 25 offset %s" % (
-        text, n)
+        like = f"%{text}%"
         cur = CONN.cursor()
-        data = cur.execute(sql).fetchall()
-        total = cur.execute(sql_total).fetchone()['total']
+        data = cur.execute("select title,feng,video,id,collect,yulan,company from hentai_movies "
+                           "where title like ? limit 25 offset ?", (like, n)).fetchall()
+        total = cur.execute("select count(*) as total from hentai_movies where title like ?", (like,)).fetchone()['total']
         t = total / 25
         TOTAL_PAGE = int(t)
         if t > TOTAL_PAGE:
@@ -140,22 +139,12 @@ def getcollectdata():
 def change_collect(id,num,path):
     cur = CONN.cursor()
     if num==1:
-        sql = f"update hentai_movies set collect={num},colpic='{path}',collecttime=datetime('now','localtime') where id={id}"
+        cur.execute("update hentai_movies set collect=?,colpic=?,collecttime=datetime('now','localtime') where id=?",
+                    (num, path, id))
     else:
-        sql = f"update hentai_movies set collect={num} where id={id}"
-    cur.execute(sql)
+        cur.execute("update hentai_movies set collect=? where id=?", (num, id))
     CONN.commit()
     return
-
-def search_data(text,n=1):
-    n = 25*(n-1)
-    sql_total = "select count(*) from hentai_movies where title like '%%%s%%'"%text
-    sql = "select title,feng,video,id,collect,yulan,company from hentai_movies where title like '%%%s%%' limit 25 offset %s" % (text,n)
-    cur = CONN.cursor()
-    data = cur.execute(sql).fetchall()
-    total = cur.execute(sql_total).fetchone()[0]
-    total = int(total / 25) + 1
-    return data,total
 
 def recordhistory(id):
     sql = f"insert into history(hid,time) values ({id},datetime('now','localtime'))"
@@ -166,7 +155,7 @@ def recordhistory(id):
     cur.execute(sql)
     data = cur.fetchone()
     if data['total']>100:
-        sql = "delete from history where id in (select id from history limit 10)"
+        sql = "delete from history where id in (select id from history order by id limit 10)"
         cur.execute(sql)
         CONN.commit()
     sql = f"update hentai_movies set views=views+1 where id={id}"
@@ -289,20 +278,21 @@ def addtags(title,desc,img):
     src = url_to_path(img)
     n = int(time.time())
     shutil.copy(src, f"./img/tag{n}.jpg")
-    sql = f"insert into tags(name,ids,num,desc,bg) values('{title}','',0,'{desc}','img/tag{n}.jpg')"
     cur = CONN.cursor()
-    cur.execute(sql)
+    cur.execute("insert into tags(name,ids,num,desc,bg) values(?,'',0,?,?)", (title, desc, f"img/tag{n}.jpg"))
     CONN.commit()
 
 def ctags(id,title,desc,img):   # update tag
     if img.startswith("file"):
         src = url_to_path(img)
         shutil.copy(src,f"./img/tag{id}.jpg")
-        sql = f"update tags set name='{title}',desc='{desc}',bg='img/tag{id}.jpg' where id={id}"
+        sql = "update tags set name=?,desc=?,bg=? where id=?"
+        args = (title, desc, f"img/tag{id}.jpg", id)
     else:
-        sql = f"update tags set name='{title}',desc='{desc}' where id={id}"
+        sql = "update tags set name=?,desc=? where id=?"
+        args = (title, desc, id)
     cur = CONN.cursor()
-    cur.execute(sql)
+    cur.execute(sql, args)
     CONN.commit()
 
 def deltag(id):
@@ -327,7 +317,7 @@ def detail(id):
     cur = CONN.cursor()
     cur.execute(sql)
     data = cur.fetchone()
-    path = getdatadir()+"/"+data['video'].rstrip(".mp4") + ".srt"
+    path = getdatadir()+"/"+os.path.splitext(data['video'])[0] + ".srt"
     zimu = {}
     zimul = []
     if os.path.exists(path):
@@ -376,21 +366,19 @@ def changetags(s,id,nums):
     CONN.commit()
 
 def insertvideo(title,feng,video,ico=""):
-    sql = f"insert into hentai_movies(title,feng,video,yulan,company) values('{title}','{feng}','{video}','','{ico}')"
     cur = CONN.cursor()
-    cur.execute(sql)
+    cur.execute("insert into hentai_movies(title,feng,video,yulan,company) values(?,?,?,'',?)",
+                (title, feng, video, ico))
     CONN.commit()
 
 def updatepreview(workpath,name,id):
-    sql = f"update hentai_movies set yulan='{workpath[0] + '/' + name}' where id = {id}"
     cur = CONN.cursor()
-    cur.execute(sql)
+    cur.execute("update hentai_movies set yulan=? where id=?", (workpath[0] + '/' + name, id))
     CONN.commit()
 
 def updatedata(id,title,newpath):
-    sql = f"update hentai_movies set title='{title}',feng='{newpath}' where id={id}"
     cur = CONN.cursor()
-    cur.execute(sql)
+    cur.execute("update hentai_movies set title=?,feng=? where id=?", (title, newpath, id))
     CONN.commit()
 
 def updateswitch(c):
@@ -437,9 +425,8 @@ def updatelang(n):
 
 def updatedatadir(dir):
     dir = dir.replace("\\","/")
-    sql = f"update config set datadir='{dir}'"
     cur = CONN.cursor()
-    cur.execute(sql)
+    cur.execute("update config set datadir=?", (dir,))
     CONN.commit()
 
 def getdatadir():
@@ -478,8 +465,7 @@ def datadir():
     if env_dir or not datadir["datadir"]:
         pwd = env_dir or os.getcwd().replace("\\","/")+"/datadir"
         os.makedirs(pwd, exist_ok=True)
-        sql = f"update config set datadir='{pwd}'"
-        cur.execute(sql)
+        cur.execute("update config set datadir=?", (pwd,))
         CONN.commit()
 
 def setheadless(num):

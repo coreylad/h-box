@@ -11,20 +11,19 @@ headers = {
 def getporoxy():
     proxy = getproxies()
     if proxy:
-        proxy['https'] = proxy['https'].replace('https','http')
-        del proxy['ftp']
+        if 'https' in proxy:
+            proxy['https'] = proxy['https'].replace('https','http')
+        proxy.pop('ftp', None)
         return proxy
     return None
 def gethttpxporoxy():
     proxy = getproxies()
-    if proxy:
-        proxy['https'] = proxy['https'].replace('https','http')
-        del proxy['ftp']
-        d = {}
+    d = {}
+    if 'http' in proxy:
         d['http://'] = proxy['http']
-        d['https://'] = proxy['https']
-        return d
-    return None
+    if 'https' in proxy:
+        d['https://'] = proxy['https'].replace('https','http',1)
+    return d or None
 def loadm3u8(url,b=False):
     r = httpx.get(url, verify=False, headers=headers,proxies=gethttpxporoxy())
     if b:
